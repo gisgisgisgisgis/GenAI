@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Customized GPT</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Fraunces:opsz,wght@9..144,700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/atom-one-dark.min.css"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="backdrop"></div>
+    <main id="appLayout" class="layout">
+      <aside class="panel conversations">
+        <div class="sidebar-top">
+          <h1>Customized GPT</h1>
+          <button id="newChatBtn" type="button">New Chat</button>
+        </div>
+        <p class="subtitle">Select a chat or create a new one.</p>
+        <div id="conversationList" class="conversation-list"></div>
+      </aside>
+
+      <section class="panel chat">
+        <div class="chat-header">
+          <h2 id="activeConversationTitle">New Chat</h2>
+        </div>
+        <div id="messages" class="messages"></div>
+
+        <form id="chatForm" class="composer">
+          <textarea id="messageInput" placeholder="Type your message..." rows="3" required></textarea>
+          <div class="composer-actions">
+            <div class="composer-left">
+              <label class="mode-label" for="responseMode">Mode</label>
+              <select id="responseMode" class="mode-select">
+                <option value="fast" selected>Fast</option>
+                <option value="think">Think</option>
+              </select>
+              <span id="status" aria-live="polite"></span>
+            </div>
+            <button id="sendBtn" type="submit">Send</button>
+          </div>
+        </form>
+      </section>
+
+      <aside class="settings-shell">
+        <button
+          id="toggleSettings"
+          class="drawer-toggle"
+          type="button"
+          aria-expanded="true"
+          aria-label="Collapse settings"
+          aria-controls="settingsPanel"
+          title="Collapse settings"
+        >
+          ❯
+        </button>
+        <section id="settingsPanel" class="panel controls">
+          <h3>Settings</h3>
+          <p class="subtitle">Tune behavior, model, and response style safely through a secure backend.</p>
+
+          <label for="model">Model</label>
+          <select id="model">
+            <option value="llama-3.1-8b-instant" selected>llama-3.1-8b-instant</option>
+            <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile</option>
+            <option value="mixtral-8x7b-32768">mixtral-8x7b-32768</option>
+            <option value="gemma2-9b-it">gemma2-9b-it</option>
+          </select>
+
+          <label for="systemPrompt">System Prompt</label>
+          <textarea id="systemPrompt" rows="5">You are a helpful assistant tailored to the user's needs.</textarea>
+
+          <div class="row">
+            <div>
+              <label for="temperature">Temperature</label>
+              <input id="temperature" type="number" min="0" max="2" step="0.1" value="0.7" />
+            </div>
+            <div>
+              <label for="maxTokens">Max Tokens</label>
+              <input id="maxTokens" type="number" min="1" max="4000" step="1" value="400" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="topP">Top P</label>
+              <input id="topP" type="number" min="0" max="1" step="0.05" value="1" />
+            </div>
+            <div>
+              <label for="presencePenalty">Presence Penalty</label>
+              <input id="presencePenalty" type="number" min="-2" max="2" step="0.1" value="0" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="frequencyPenalty">Frequency Penalty</label>
+              <input id="frequencyPenalty" type="number" min="-2" max="2" step="0.1" value="0" />
+            </div>
+            <div class="toggle-wrap">
+              <label class="toggle" for="streamMode">
+                <input id="streamMode" type="checkbox" checked />
+                <span>Streaming mode</span>
+              </label>
+            </div>
+          </div>
+
+          <button id="resetMemory" class="secondary">Reset Short-Term Memory</button>
+        </section>
+      </aside>
+    </main>
+
+    <div id="loadMemoryModal" class="modal" aria-hidden="true">
+      <div class="modal-card">
+        <h3>Load Conversation Memory</h3>
+        <p class="modal-subtitle">Select source conversations to load (multi-select, excluding current chat).</p>
+        <div id="loadMemoryList" class="load-memory-list"></div>
+        <div class="modal-actions">
+          <button id="cancelLoadMemory" class="ghost" type="button">Cancel</button>
+          <button id="confirmLoadMemory" type="button">Load Memory</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="renameConversationModal" class="modal" aria-hidden="true">
+      <div class="modal-card rename-card">
+        <h3>Rename Conversation</h3>
+        <p class="modal-subtitle">Set a new title for this conversation.</p>
+        <label for="renameConversationInput">Conversation Title</label>
+        <input
+          id="renameConversationInput"
+          class="rename-input"
+          type="text"
+          maxlength="120"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <div class="modal-actions">
+          <button id="cancelRenameConversation" class="ghost" type="button">Cancel</button>
+          <button id="confirmRenameConversation" type="button">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.7/dist/purify.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/lib/common.min.js" defer></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>
