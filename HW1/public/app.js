@@ -68,6 +68,24 @@ const state = {
   renameTargetId: "",
 };
 
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1"]);
+const runtimeConfig =
+  window.APP_CONFIG && typeof window.APP_CONFIG === "object" ? window.APP_CONFIG : {};
+const configuredApiBase =
+  typeof runtimeConfig.API_BASE_URL === "string"
+    ? runtimeConfig.API_BASE_URL.trim().replace(/\/+$/, "")
+    : "";
+const API_BASE_URL =
+  configuredApiBase || (LOCAL_HOSTS.has(window.location.hostname) ? window.location.origin : "");
+
+function apiPath(path) {
+  return API_BASE_URL ? `${API_BASE_URL}${path}` : path;
+}
+
+function apiFetch(path, options) {
+  return fetch(apiPath(path), options);
+}
+
 function numberOr(value, fallback) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -647,7 +665,7 @@ function addMessage(conversation, role, content, rerender = true) {
 }
 
 async function replaceServerMemory(sessionId, messages) {
-  const response = await fetch("/api/memory/replace", {
+  const response = await apiFetch("/api/memory/replace", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ sessionId, messages }),
@@ -751,7 +769,7 @@ async function loadSelectedConversationMemory() {
   setStatus("Loading memory...");
 
   try {
-    const response = await fetch("/api/memory/load", {
+    const response = await apiFetch("/api/memory/load", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -908,7 +926,7 @@ function deleteConversation(conversationId) {
   saveState();
   renderAll();
 
-  fetch("/api/memory/reset", {
+  apiFetch("/api/memory/reset", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ sessionId: removedConversation.sessionId }),
@@ -967,7 +985,7 @@ function setSettingsOpen(isOpen) {
 }
 
 async function sendNonStreaming(payload, conversation) {
-  const response = await fetch("/api/chat", {
+  const response = await apiFetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -982,7 +1000,7 @@ async function sendNonStreaming(payload, conversation) {
 }
 
 async function sendStreaming(payload, conversation, pendingBubble) {
-  const response = await fetch("/api/chat", {
+  const response = await apiFetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -1104,7 +1122,7 @@ resetMemoryEl.addEventListener("click", async () => {
   if (!activeConversation) return;
 
   try {
-    const response = await fetch("/api/memory/reset", {
+    const response = await apiFetch("/api/memory/reset", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sessionId: activeConversation.sessionId }),
