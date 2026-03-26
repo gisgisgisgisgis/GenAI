@@ -76,7 +76,7 @@ const configuredApiBase =
     ? runtimeConfig.API_BASE_URL.trim().replace(/\/+$/, "")
     : "";
 const API_BASE_URL =
-  configuredApiBase || (LOCAL_HOSTS.has(window.location.hostname) ? window.location.origin : "");
+  LOCAL_HOSTS.has(window.location.hostname) ? window.location.origin : configuredApiBase;
 
 function apiPath(path) {
   return API_BASE_URL ? `${API_BASE_URL}${path}` : path;
