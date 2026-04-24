@@ -36,6 +36,19 @@
 
         <form id="chatForm" class="composer">
           <textarea id="messageInput" placeholder="Type your message..." rows="3" required></textarea>
+          <div class="attachment-row">
+            <label class="attachment-label" for="attachmentInput">Attachments</label>
+            <input
+              id="attachmentInput"
+              type="file"
+              multiple
+              accept="image/*,audio/*,video/*"
+            />
+          </div>
+          <p id="multimodalHint" class="multimodal-hint">
+            Supported now: text. Runtime multimodal capabilities are loading...
+          </p>
+          <div id="attachmentList" class="attachment-list"></div>
           <div class="composer-actions">
             <div class="composer-left">
               <label class="mode-label" for="responseMode">Mode</label>
@@ -45,7 +58,10 @@
               </select>
               <span id="status" aria-live="polite"></span>
             </div>
-            <button id="sendBtn" type="submit">Send</button>
+            <div class="composer-right">
+              <button id="runAgentBtn" class="ghost" type="button">Run Agent Task</button>
+              <button id="sendBtn" type="submit">Send</button>
+            </div>
           </div>
         </form>
       </section>
@@ -67,12 +83,72 @@
           <p class="subtitle">Tune behavior, model, and response style safely through a secure backend.</p>
 
           <label for="model">Model</label>
-          <select id="model">
-            <option value="llama-3.1-8b-instant" selected>llama-3.1-8b-instant</option>
-            <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile</option>
-            <option value="mixtral-8x7b-32768">mixtral-8x7b-32768</option>
-            <option value="gemma2-9b-it">gemma2-9b-it</option>
-          </select>
+          <select id="model"></select>
+
+          <label>Runtime Capabilities</label>
+          <div id="capabilityBadges" class="capability-badges"></div>
+
+          <label for="userId">User ID</label>
+          <input id="userId" type="text" maxlength="80" autocomplete="off" spellcheck="false" />
+
+          <div class="row">
+            <div>
+              <label for="responseStyle">Response Style</label>
+              <select id="responseStyle">
+                <option value="concise" selected>Concise</option>
+                <option value="technical">Technical</option>
+                <option value="casual">Casual</option>
+              </select>
+            </div>
+            <div>
+              <label for="expertiseLevel">Expertise</label>
+              <select id="expertiseLevel">
+                <option value="beginner">Beginner</option>
+                <option value="intermediate" selected>Intermediate</option>
+                <option value="expert">Expert</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="taskType">Task Type</label>
+              <select id="taskType">
+                <option value="auto" selected>Auto</option>
+                <option value="chat">Chat</option>
+                <option value="reasoning">Reasoning</option>
+                <option value="coding">Coding</option>
+                <option value="vision">Vision</option>
+              </select>
+            </div>
+            <div>
+              <label for="toolMode">Tool Mode</label>
+              <select id="toolMode">
+                <option value="auto" selected>Auto</option>
+                <option value="off">Off</option>
+                <option value="manual">Manual</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label for="qualityPreference">Quality Preference</label>
+              <select id="qualityPreference">
+                <option value="balanced" selected>Balanced</option>
+                <option value="quality">Higher Quality</option>
+                <option value="fast">Lower Latency</option>
+              </select>
+            </div>
+            <div>
+              <label for="costPreference">Cost Preference</label>
+              <select id="costPreference">
+                <option value="balanced" selected>Balanced</option>
+                <option value="low">Lower Cost</option>
+                <option value="high">Allow Higher Cost</option>
+              </select>
+            </div>
+          </div>
 
           <label for="systemPrompt">System Prompt</label>
           <textarea id="systemPrompt" rows="5">You are a helpful assistant tailored to the user's needs.</textarea>
@@ -112,7 +188,21 @@
             </div>
           </div>
 
+          <div class="row">
+            <div>
+              <label for="compressTrigger">Compress Trigger</label>
+              <input id="compressTrigger" type="number" min="8" max="120" step="1" value="22" />
+            </div>
+            <div>
+              <label for="keepRecentMessages">Keep Recent</label>
+              <input id="keepRecentMessages" type="number" min="4" max="40" step="1" value="12" />
+            </div>
+          </div>
+
+          <button id="applyContextConfig" class="ghost" type="button">Apply Context Compression</button>
+
           <button id="resetMemory" class="secondary">Reset Short-Term Memory</button>
+          <button id="openMemoryManager" class="ghost" type="button">Manage Long-Term Memory</button>
         </section>
       </aside>
     </main>
@@ -145,6 +235,54 @@
         <div class="modal-actions">
           <button id="cancelRenameConversation" class="ghost" type="button">Cancel</button>
           <button id="confirmRenameConversation" type="button">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="memoryManagerModal" class="modal" aria-hidden="true">
+      <div class="modal-card memory-manager-card">
+        <h3>Long-Term Memory</h3>
+        <p class="modal-subtitle">View, edit, delete, summarize, and prune persisted memory for this user.</p>
+
+        <div class="memory-manager-add-inline">
+          <button id="openAddMemoryModal" type="button">Add Memory</button>
+        </div>
+
+        <div class="memory-manager-toolbar">
+          <button id="refreshMemoryList" class="ghost" type="button">Refresh</button>
+          <button id="summarizeMemoryBtn" class="ghost" type="button">Summarize</button>
+          <button id="pruneMemoryBtn" class="ghost" type="button">Prune</button>
+          <button id="exportMemoryBtn" class="ghost" type="button">Export</button>
+          <button id="clearMemoryBtn" class="ghost" type="button">Clear All</button>
+        </div>
+        <div id="memoryManagerList" class="memory-manager-list" tabindex="0"></div>
+        <div class="modal-actions">
+          <button id="closeMemoryManager" class="ghost" type="button">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="addMemoryModal" class="modal" aria-hidden="true">
+      <div class="modal-card add-memory-card">
+        <h3>Add Memory</h3>
+        <p class="modal-subtitle">Create a new long-term memory item for this user.</p>
+
+        <div class="memory-manager-add">
+          <label for="memoryTypeInput">Type</label>
+          <select id="memoryTypeInput">
+            <option value="fact" selected>Fact</option>
+            <option value="preference">Preference</option>
+            <option value="history">History</option>
+            <option value="task">Task</option>
+          </select>
+
+          <label for="memoryContentInput">Memory Content</label>
+          <textarea id="memoryContentInput" rows="4" placeholder="Add a memory item..."></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button id="cancelAddMemoryModal" class="ghost" type="button">Cancel</button>
+          <button id="addMemoryItem" type="button">Save Memory</button>
         </div>
       </div>
     </div>

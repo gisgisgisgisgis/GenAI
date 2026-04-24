@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # GenAI
 =======
 # Custom Groq Website
@@ -98,4 +97,3 @@
    - Ask follow-up questions referencing prior context.
    - Confirm model remembers recent turns.
    - Click reset memory and verify context is no longer retained.
->>>>>>> Initial commit
